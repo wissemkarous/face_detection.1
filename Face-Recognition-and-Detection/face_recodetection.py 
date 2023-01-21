@@ -1,0 +1,176 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "authorship_tag": "ABX9TyMKitcjkuDCZBjjk2sci9DT",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    },
+    "accelerator": "GPU",
+    "gpuClass": "standard"
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/wissemkarous/face_detection.1/blob/main/Face-Recognition-and-Detection/face_recodetection.py%20\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 2,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "giRxqg6JQmrP",
+        "outputId": "b497e6df-1130-48a1-a751-65d1b2463d09"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Looking in indexes: https://pypi.org/simple, https://us-python.pkg.dev/colab-wheels/public/simple/\n",
+            "Collecting face_recognition\n",
+            "  Downloading face_recognition-1.3.0-py2.py3-none-any.whl (15 kB)\n",
+            "Requirement already satisfied: Pillow in /usr/local/lib/python3.8/dist-packages (from face_recognition) (7.1.2)\n",
+            "Collecting face-recognition-models>=0.3.0\n",
+            "  Downloading face_recognition_models-0.3.0.tar.gz (100.1 MB)\n",
+            "\u001b[2K     \u001b[90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\u001b[0m \u001b[32m100.1/100.1 MB\u001b[0m \u001b[31m10.8 MB/s\u001b[0m eta \u001b[36m0:00:00\u001b[0m\n",
+            "\u001b[?25h  Preparing metadata (setup.py) ... \u001b[?25l\u001b[?25hdone\n",
+            "Requirement already satisfied: dlib>=19.7 in /usr/local/lib/python3.8/dist-packages (from face_recognition) (19.24.0)\n",
+            "Requirement already satisfied: numpy in /usr/local/lib/python3.8/dist-packages (from face_recognition) (1.21.6)\n",
+            "Requirement already satisfied: Click>=6.0 in /usr/local/lib/python3.8/dist-packages (from face_recognition) (7.1.2)\n",
+            "Building wheels for collected packages: face-recognition-models\n",
+            "  Building wheel for face-recognition-models (setup.py) ... \u001b[?25l\u001b[?25hdone\n",
+            "  Created wheel for face-recognition-models: filename=face_recognition_models-0.3.0-py2.py3-none-any.whl size=100566185 sha256=bd8547d2a5870e1dec49d92c5e21d0e6c5bfafba4ec755977b9c6e99275403c9\n",
+            "  Stored in directory: /root/.cache/pip/wheels/b4/4b/8f/751e99d45f089bdf366a7d3e5066db3c2b84a62e4377f534d7\n",
+            "Successfully built face-recognition-models\n",
+            "Installing collected packages: face-recognition-models, face_recognition\n",
+            "Successfully installed face-recognition-models-0.3.0 face_recognition-1.3.0\n"
+          ]
+        }
+      ],
+      "source": [
+        "! pip install face_recognition"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import os\n",
+        "import glob\n",
+        "\n",
+        "import cv2\n",
+        "import numpy as np\n",
+        "\n",
+        "from face_recognition import face_encodings, compare_faces, face_locations, face_distance\n",
+        "\n",
+        "\n",
+        "\n",
+        "\n",
+        "\n",
+        "def name_and_feature_extraction(images_path):\n",
+        "    '''\n",
+        "    Parameters\n",
+        "    ----------\n",
+        "    images_path : str\n",
+        "        Path for your images in the database.\n",
+        "    Returns\n",
+        "    -------\n",
+        "    encodings : list\n",
+        "        List of the extracted features from your images.\n",
+        "        Number of the extracted encodings has to equal the num of your images.\n",
+        "    names : list\n",
+        "        Names of your images.\n",
+        "        Number of the extracted names has to equal the num of your images.\n",
+        "    '''\n",
+        "    images_path = glob.glob(images_path+'/*')\n",
+        "    \n",
+        "    encodings = []\n",
+        "    names = []\n",
+        "\n",
+        "    for img_path in images_path:\n",
+        "\n",
+        "        # Features Extraction\n",
+        "        img = cv2.imread(img_path)\n",
+        "        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)\n",
+        "\n",
+        "        img_enc = face_encodings(img)[0]\n",
+        "        encodings.append(img_enc)\n",
+        "\n",
+        "        # Name Extraction\n",
+        "        img_name = os.path.basename(img_path)\n",
+        "        img_name = os.path.splitext(img_name)[0]\n",
+        "        names.append(img_name)\n",
+        "\n",
+        "    return encodings, names\n",
+        "\n",
+        "\n",
+        "def detect_and_recognize(img, encodings, names):\n",
+        "    '''\n",
+        "    Parameters\n",
+        "    ----------\n",
+        "    img : array\n",
+        "        RGB image array.\n",
+        "    encodings : list or tuple\n",
+        "        Features of your own images to compare.\n",
+        "    names : list or tuple\n",
+        "        Names of your own images to make the recognition.\n",
+        "    Returns\n",
+        "    -------\n",
+        "    pts : array\n",
+        "        Coordinates of the detected faces in the img.\n",
+        "    face_names : list\n",
+        "        Names of the detected faces in the img.\n",
+        "    '''\n",
+        "    \n",
+        "    face_names=[]\n",
+        "    \n",
+        "    # img = cv2.resize(img, (0, 0), fx=0.5, fy=0.5)\n",
+        "    rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)\n",
+        "    \n",
+        "    face_locs = face_locations(rgb)\n",
+        "    face_encs = face_encodings(rgb, face_locs)\n",
+        "    \n",
+        "    for face_enc in face_encs:\n",
+        "        matches = compare_faces(encodings, face_enc)\n",
+        "        name = 'Unknown'\n",
+        "        \n",
+        "        # if True in matches:\n",
+        "        #     first_match_index = matches.index(True)\n",
+        "        #     name = known_face_names[first_match_index]\n",
+        "        \n",
+        "        face_dis = face_distance(encodings, face_enc)\n",
+        "        idx = np.argmin(face_dis)\n",
+        "        \n",
+        "        if matches[idx]:\n",
+        "            name = names[idx]\n",
+        "            \n",
+        "        face_names.append(name)\n",
+        "        \n",
+        "    pts = np.array(face_locs)\n",
+        "        \n",
+        "    return pts, face_names"
+      ],
+      "metadata": {
+        "id": "bPloQWJhQ3z0"
+      },
+      "execution_count": 3,
+      "outputs": []
+    }
+  ]
+}
